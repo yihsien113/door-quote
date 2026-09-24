@@ -93,6 +93,50 @@
         .merge-cell:hover .btn-split-line { display: block; }
         .btn-split-line:hover { background: #e6f7ff; }
 
+        /* --- 附件圖片區樣式 --- */
+        /* --- 附件圖片區樣式 --- */
+        .img-preview { 
+            position: relative; 
+            display: inline-block; 
+            width: 48%; /* 預設寬度 */
+            height: 300px; /* 新增預設高度，避免解開比例後圖片縮成一團 */
+            min-width: 15%; 
+            min-height: 50px; /* 限制最小高度 */
+            max-width: 100%; 
+            margin-bottom: 10px;
+            resize: both; /* 【關鍵1】改為 both，允許橫向與直向自由拖拉 */
+            overflow: hidden; 
+        }
+        .img-preview:hover {
+            outline: 2px dashed #2196F3; /* 滑鼠移過去提示可拖拉 */
+        }
+        .img-preview img { 
+            width: 100%; 
+            height: 100%; /* 【關鍵2】改為 100%，讓圖片高度強制跟著外框走 */
+            object-fit: fill; /* 【關鍵3】強制圖片變形填滿，不再保持原比例 */
+            border: 1px solid #ccc; 
+            border-radius: 4px;
+            display: block; 
+            pointer-events: none; 
+        }
+        .btn-del-img { 
+            position: absolute; 
+            top: 5px; 
+            right: 5px; 
+            background: #ff4d4f; 
+            color: white; 
+            cursor: pointer; 
+            border: none; 
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            font-size: 12px;
+            line-height: 24px;
+            text-align: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        .btn-del-img:hover { background: #d9363e; transform: scale(1.1); }
+
         /* --- 列印模式樣式 --- */
         @media print {
             @page { size: A4; margin: 0; }
@@ -101,6 +145,23 @@
             .a4-page { margin: 0; padding: 7.5mm; box-shadow: none; width: 100%; min-height: auto; }
             textarea.editable { border: none !important; background: transparent !important; }
             ::-webkit-input-placeholder { color: transparent; }
+        }
+
+        /* --- 手機版螢幕優化 --- */
+        @media screen and (max-width: 850px) {
+            body { 
+                overflow-x: auto; /* 解除限制，允許手機左右滑動 */
+                padding-bottom: 50px; /* 底部留白，方便手指滑動 */
+            }
+            .a4-page { 
+                width: 800px; /* 在手機上固定為 800px 寬，避免表格被擠壓變形 */
+                margin: 10px 0; /* 移除外框的大留白 */
+                padding: 10mm;
+                transform-origin: top left;
+            }
+            .toolbar {
+                position: fixed; top: auto; bottom: 0; width: 100%; box-sizing: border-box; /* 將工具列移到手機底部，方便單手點擊 */
+            }
         }
     </style>
 </head>
@@ -123,7 +184,6 @@
         </div>
 
         <!-- 1. 滿版獨立的客戶與案件名稱輸入區 -->
-        <!-- 移除「客戶名稱：」並加上 padding-left: 0 確保第一個字與下方的「聯」精準對齊 -->
         <div class="info-line" style="width: 100%;">
             <textarea id="cusName" class="editable" rows="1" placeholder="請輸入客戶名稱及案件名稱 (如：X X 營造 - 桃園 X X 工地)" oninput="autoResize(this)" style="padding-left: 0; font-size: 22px; font-weight: bold; text-decoration: underline;"></textarea>
         </div>
@@ -133,7 +193,7 @@
             <div class="info-box">
                 <div class="info-line"><span>聯絡電話：</span><textarea id="cusPhone" class="editable" rows="1" placeholder="請輸入電話" oninput="autoResize(this)"></textarea></div>
             </div>
-            <!-- 3. 右側：報價日期 (加上 width: auto 消除預設寬度造成的空隙，並縮小輸入框) -->
+            <!-- 3. 右側：報價日期 -->
             <div class="info-box" style="display: flex; flex-direction: column; justify-content: flex-start; align-items: flex-end;">
                 <div class="info-line" style="justify-content: flex-end; width: 100%;">
                     <span style="font-weight: bold; width: auto;">報價日期：</span>
@@ -145,10 +205,10 @@
         <table id="quoteTable">
             <thead>
                 <tr>
-                    <th width="5%">類別</th>
+                    <th width="4%">類別</th>
                     <th width="28%">品項</th>
                     <th width="16%">規格</th>
-                    <th width="14%">單價(新台幣)</th>
+                    <th width="15%">單價(新台幣)</th>
                     <th width="9%">數量</th>
                     <th width="28%">備註</th>
                     <th class="action-td no-print"></th>
@@ -168,6 +228,18 @@
 (4) 本工程利潤微薄，恕不接受扣除清潔費、保險費等任何名目費用。
 (5) 本報價單自報價日起 15 天內有效。</textarea>
         </div>
+
+        <!-- 附圖區 -->
+        <div style="margin-top: 20px; page-break-inside: avoid;">
+            <div style="display: flex; align-items: center; margin-bottom: 10px;">
+                <h4 style="margin: 0;">附件圖片：</h4>
+                <button class="no-print" onclick="document.getElementById('imgUpload').click()" style="margin-left: 10px; padding: 4px 8px; cursor: pointer; border: 1px solid #333; background: #fff; border-radius: 4px;">➕ 新增圖片</button>
+            </div>
+            <input type="file" id="imgUpload" accept="image/*" style="display:none" onchange="addImage(event)">
+            <!-- 圖片會被加進這個容器內 -->
+            <div id="imageContainer" style="display: flex; flex-wrap: wrap; justify-content: flex-start; gap: 15px;">
+            </div>
+        </div>
     </div>
 
     <!-- 邏輯控制腳本 -->
@@ -179,7 +251,7 @@
                                String(today.getDate()).padStart(2, '0');
             document.getElementById('quoteDate').value = dateString;
             addRow(); 
-            autoResize(document.getElementById('notes')); /* 加入這行：讓網頁一打開就自動根據字數撐開備註區高度 */
+            autoResize(document.getElementById('notes')); 
         };
 
         function autoResize(el) {
@@ -193,6 +265,33 @@
             tbody.insertAdjacentHTML('beforeend', newTr);
             const addedTr = tbody.lastElementChild;
             addedTr.querySelectorAll('textarea').forEach(ta => autoResize(ta));
+        }
+
+        // 🖼️ 處理圖片上傳
+        function addImage(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const base64Str = e.target.result;
+                renderImage(base64Str);
+            };
+            // 將圖片讀取為 Base64 格式
+            reader.readAsDataURL(file);
+            event.target.value = ''; // 清空 input，讓同一張圖片可以重複選取
+        }
+
+        // 🖼️ 將圖片渲染到畫面上
+        function renderImage(base64Str) {
+            const container = document.getElementById('imageContainer');
+            const div = document.createElement('div');
+            div.className = 'img-preview';
+            div.innerHTML = `
+                <button class="btn-del-img no-print" onclick="this.parentElement.remove()" title="刪除圖片">✖</button>
+                <img src="${base64Str}">
+            `;
+            container.appendChild(div);
         }
 
         // 產生一列的 HTML 模板 (加入類別 cat 參數)
@@ -225,7 +324,7 @@
                     ${catHtml}
                     <!-- 品項改為置中 -->
                     <td><textarea class="editable item-name" rows="1" placeholder="品項" oninput="autoResize(this)" style="text-align: center;">${name}</textarea></td>
-                    <!-- 規格改為置中 (移除 class="left" 並於 textarea 加入 text-align: center) -->
+                    <!-- 規格改為置中 -->
                     <td><textarea class="editable item-spec" rows="1" placeholder="尺寸" oninput="autoResize(this)" style="text-align: center;">${spec}</textarea></td>
                     <!-- 單價與數量維持原本的置中設定 -->
                     <td><textarea class="editable item-price" rows="1" placeholder="單價" oninput="autoResize(this)" style="text-align: center;">${price}</textarea></td>
@@ -323,36 +422,40 @@
             wrapper.insertAdjacentHTML('beforeend', generateToolsHtml(span, cellClass));
         }
 
-        // 維護新增列時的跨列狀態
-        function maintainSpanOnAdd(tr, cellClass) {
-            const hasCell = tr.querySelector(cellClass) !== null;
-            if (!hasCell) {
-                let distance = 1;
-                let prevTr = tr.previousElementSibling;
-                while(prevTr) {
-                    const td = prevTr.querySelector(cellClass);
-                    if (td) {
-                        let span = parseInt(td.getAttribute('rowspan')) || 1;
-                        if (span > distance) {
-                            td.setAttribute('rowspan', span + 1);
-                            updateRowspanDisplay(td, cellClass);
-                            break;
-                        }
+        // 判斷並維護新增列時的合併狀態，回傳是否需要產生對應的 td
+        function checkAndMaintainSpanForNewRow(tr, cellClass) {
+            let shouldGenerateCell = true;
+            let prev = tr;
+            let distance = 0;
+            
+            while(prev) {
+                const td = prev.querySelector(cellClass);
+                if(td) {
+                    let span = parseInt(td.getAttribute('rowspan')) || 1;
+                    // 如果新增的列剛好落在這個合併儲存格的涵蓋範圍內
+                    if (span > distance + 1) {
+                        shouldGenerateCell = false; // 阻斷產生多餘的 td
+                        td.setAttribute('rowspan', span + 1); // 讓母儲存格的向下合併範圍 +1
+                        updateRowspanDisplay(td, cellClass); 
                     }
-                    distance++;
-                    prevTr = prevTr.previousElementSibling;
+                    break;
                 }
+                distance++;
+                prev = prev.previousElementSibling;
             }
+            return shouldGenerateCell;
         }
 
         // ➕ 在下方新增一列
         function addRowBelow(btn) {
             const tr = btn.closest('tr');
-            const newTrHTML = generateRowHTML('', '', '', '', '', '', true, 1, true, 1);
-            tr.insertAdjacentHTML('afterend', newTrHTML);
             
-            maintainSpanOnAdd(tr, '.category-cell');
-            maintainSpanOnAdd(tr, '.note-cell');
+            // 動態判斷這列需不需要產生 類別 與 備註 的儲存格
+            const hasCat = checkAndMaintainSpanForNewRow(tr, '.category-cell');
+            const hasNote = checkAndMaintainSpanForNewRow(tr, '.note-cell');
+            
+            const newTrHTML = generateRowHTML('', '', '', '', '', '', hasCat, 1, hasNote, 1);
+            tr.insertAdjacentHTML('afterend', newTrHTML);
             
             const newTr = tr.nextElementSibling;
             newTr.querySelectorAll('textarea').forEach(ta => autoResize(ta));
@@ -368,14 +471,12 @@
             const qty = tr.querySelector('.item-qty')?.value || '';
             const note = tr.querySelector('.item-note')?.value || '';
             
-            const hasCatCell = tr.querySelector('.category-cell') !== null;
-            const hasNoteCell = tr.querySelector('.note-cell') !== null;
+            // 動態判斷這列需不需要產生 類別 與 備註 的儲存格
+            const hasCat = checkAndMaintainSpanForNewRow(tr, '.category-cell');
+            const hasNote = checkAndMaintainSpanForNewRow(tr, '.note-cell');
             
-            const newTrHTML = generateRowHTML(cat, name, spec, price, qty, note, hasCatCell, 1, hasNoteCell, 1);
+            const newTrHTML = generateRowHTML(cat, name, spec, price, qty, note, hasCat, 1, hasNote, 1);
             tr.insertAdjacentHTML('afterend', newTrHTML);
-            
-            maintainSpanOnAdd(tr, '.category-cell');
-            maintainSpanOnAdd(tr, '.note-cell');
             
             const newTr = tr.nextElementSibling;
             newTr.querySelectorAll('textarea').forEach(ta => autoResize(ta));
@@ -423,6 +524,15 @@
 
         // 🗑️ 刪除一列
         function delRow(btn) {
+            // 取得表格本體
+            const tbody = document.getElementById('tableBody');
+            
+            // 檢查目前表格內有幾行，如果小於等於1行，跳出警告並阻斷刪除
+            if (tbody.querySelectorAll('tr').length <= 1) {
+                alert("不可刪除最後一行");
+                return; // 終止函數執行，保護最後一行不被刪除
+            }
+
             const tr = btn.closest('tr');
             maintainSpanOnDel(tr, '.category-cell');
             maintainSpanOnDel(tr, '.note-cell');
@@ -436,7 +546,8 @@
                 cusPhone: document.getElementById('cusPhone').value,
                 quoteDate: document.getElementById('quoteDate').value,
                 notes: document.getElementById('notes').value,
-                items: []
+                items: [],
+                images: [] // 新增這行：用來存圖片
             };
 
             const rows = document.querySelectorAll('#tableBody tr');
@@ -455,6 +566,11 @@
                     hasNote: row.querySelector('.note-cell') !== null,
                     noteSpan: row.querySelector('.note-cell') ? (parseInt(row.querySelector('.note-cell').getAttribute('rowspan')) || 1) : 0
                 });
+            });
+
+            // 新增這段：抓取畫面上所有的圖片 Base64 並存入陣列
+            document.querySelectorAll('#imageContainer img').forEach(img => {
+                data.images.push(img.src);
             });
 
             const dataStr = JSON.stringify(data, null, 2);
@@ -497,6 +613,12 @@
                     tbody.insertAdjacentHTML('beforeend', newTr);
                 });
                 
+                // 新增這段：清空現有圖片並載入舊圖片
+                document.getElementById('imageContainer').innerHTML = '';
+                if (data.images && data.images.length > 0) {
+                    data.images.forEach(base64Str => renderImage(base64Str));
+                }
+
                 document.querySelectorAll('textarea.editable').forEach(ta => autoResize(ta));
                 event.target.value = ''; 
             };
